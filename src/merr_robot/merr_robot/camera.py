@@ -16,8 +16,13 @@ class ImagePublisher(Node):
   
   def timer_callback(self):
       ret, frame = self.cap.read()   
+      #compress image
+      encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 50]
+      result, frame_compressed = cv2.imencode('.jpg', frame, encode_param)
+
+
       if ret == True:
-        self.publisher_.publish(self.br.cv2_to_imgmsg(frame)) 
+        self.publisher_.publish(self.br.cv2_to_compressed_imgmsg(frame_compressed))
         self.get_logger().info('Publishing video frame')
  
 def main(args=None):
