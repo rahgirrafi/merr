@@ -21,7 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'test_node = merr_robot.test_node:main',
-            'camera = merr_host.camera:main',
+            'camera = merr_robot.camera:main',
         ],
     },
 )
