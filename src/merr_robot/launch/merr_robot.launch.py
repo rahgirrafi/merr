@@ -9,10 +9,18 @@ from launch_ros.actions import Node
 def generate_launch_description():
   
     camera_capture_node = Node(
-        package='v4l2_camera', executable='v4l2_camera_node', 
+        package='v4l2_camera', 
+        executable='v4l2_camera_node', 
         output='screen',
-        name='v4l2_camera_node',
-    )
+        name='front_camera',
+        parameters=[{
+            'device': '/dev/video0',
+            'frame_id': 'camera',
+            'width': 640,
+            'height': 480,
+            'framerate': 30,
+        }],
+
 
     rplidar_node = Node(
             name='rplidar_composition',
@@ -28,6 +36,8 @@ def generate_launch_description():
                 'scan_mode': 'Sensitivity',
             }],
         )
+    
+
     
 
     # # Create launch description and add actions
