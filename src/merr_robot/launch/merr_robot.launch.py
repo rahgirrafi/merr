@@ -20,6 +20,7 @@ def generate_launch_description():
             'height': 480,
             'framerate': 30,
         }],
+    )
 
 
     rplidar_node = Node(
