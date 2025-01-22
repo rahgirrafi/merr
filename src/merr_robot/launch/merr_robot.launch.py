@@ -8,11 +8,34 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
   
-    camera_capture_node = Node(
-        package='v4l2_camera', executable='v4l2_camera_node', 
+    main_camera_node = Node(
+        package='v4l2_camera', 
+        executable='v4l2_camera_node', 
         output='screen',
-        name='v4l2_camera_node',
+        name='front_camera',
+        parameters=[{
+            'device': '/dev/video0',
+            'frame_id': 'camera',
+            'width': 640,
+            'height': 480,
+            'framerate': 30,
+        }],
     )
+
+    endoscope_camera_node = Node(
+        package='v4l2_camera', 
+        executable='v4l2_camera_node', 
+        output='screen',
+        name='endoscope_camera',
+        parameters=[{
+            'device': '/dev/video1',
+            'frame_id': 'endoscope_camera',
+            'width': 640,
+            'height': 480,
+            'framerate': 30,
+        }],
+    )
+
 
     rplidar_node = Node(
             name='rplidar_composition',
@@ -30,10 +53,12 @@ def generate_launch_description():
         )
     
 
+    
+
     # # Create launch description and add actions
     ld = LaunchDescription()
     # ld.add_action(ignition)
-    ld.add_action(camera_capture_node)
+    ld.add_action(main_camera_node)
     ld.add_action(rplidar_node)
 
     return ld
