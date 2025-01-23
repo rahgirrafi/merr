@@ -39,6 +39,18 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_init(
     return hardware_interface::CallbackReturn::ERROR;
   }
   
+  cfg_.left_wheel_name = info_.hardware_parameters["left_wheel_name"];
+  cfg_.right_wheel_name = info_.hardware_parameters["right_wheel_name"];
+  cfg_.encoder_counts_per_rev = std::stoi(info_.hardware_parameters["enc_counts_per_rev"]);
+  cfg_.loop_rate = std::stof(info_.hardware_parameters["loop_rate"]);
+  cfg_.pid_p = std::stoi(info_.hardware_parameters["pid_p"]);
+  cfg_.pid_d = std::stoi(info_.hardware_parameters["pid_d"]);
+  cfg_.pid_i = std::stoi(info_.hardware_parameters["pid_i"]);
+  cfg_.pid_o = std::stoi(info_.hardware_parameters["pid_o"]);
+  left_wheel.setup(cfg_.left_wheel_name, cfg_.encoder_counts_per_rev);
+  right_wheel.setup(cfg_.right_wheel_name, cfg_.encoder_counts_per_rev);
+  
+
   
 
   for (const hardware_interface::ComponentInfo & joint : info_.joints)
@@ -91,6 +103,38 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_init(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
+
+std::vector<hardware_interface::StateInterface> DiffBotSystemHardware::export_state_interfaces()
+{
+  std::vector<hardware_interface::StateInterface> state_interfaces;
+
+  state_interfaces.emplace_back(hardware_interface::StateInterface(
+    left_wheel.name, hardware_interface::HW_IF_POSITION, &left_wheel.pos));
+  state_interfaces.emplace_back(hardware_interface::StateInterface(
+    left_wheel.name, hardware_interface::HW_IF_VELOCITY, &left_wheel.vel));
+
+  state_interfaces.emplace_back(hardware_interface::StateInterface(
+    right_wheel.name, hardware_interface::HW_IF_POSITION, &right_wheel.pos));
+  state_interfaces.emplace_back(hardware_interface::StateInterface(
+    right_wheel.name, hardware_interface::HW_IF_VELOCITY, &right_wheel.vel));
+
+  return state_interfaces;
+}
+
+std::vector<hardware_interface::CommandInterface> DiffBotSystemHardware::export_command_interfaces()
+{
+  std::vector<hardware_interface::CommandInterface> command_interfaces;
+
+  command_interfaces.emplace_back(hardware_interface::CommandInterface(
+    left_wheel.name, hardware_interface::HW_IF_VELOCITY, &left_wheel.cmd));
+
+  command_interfaces.emplace_back(hardware_interface::CommandInterface(
+    right_wheel.name, hardware_interface::HW_IF_VELOCITY, &right_wheel.cmd));
+
+  return command_interfaces;
+}
+
+
 hardware_interface::CallbackReturn DiffBotSystemHardware::on_configure(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
@@ -121,15 +165,7 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_configure(
 hardware_interface::CallbackReturn DiffBotSystemHardware::on_activate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(get_logger(), "Activating ...please wait...");
 
-  for (auto i = 0; i < hw_start_sec_; i++)
-  {
-    rclcpp::sleep_for(std::chrono::seconds(1));
-    RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_start_sec_ - i);
-  }
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   // command and state should be equal when starting
   for (const auto & [name, descr] : joint_command_interfaces_)
@@ -145,16 +181,6 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_activate(
 hardware_interface::CallbackReturn DiffBotSystemHardware::on_deactivate(
   const rclcpp_lifecycle::State & /*previous_state*/)
 {
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  RCLCPP_INFO(get_logger(), "Deactivating ...please wait...");
-
-  for (auto i = 0; i < hw_stop_sec_; i++)
-  {
-    rclcpp::sleep_for(std::chrono::seconds(1));
-    RCLCPP_INFO(get_logger(), "%.1f seconds left...", hw_stop_sec_ - i);
-  }
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
-
   RCLCPP_INFO(get_logger(), "Successfully deactivated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -163,47 +189,15 @@ hardware_interface::CallbackReturn DiffBotSystemHardware::on_deactivate(
 hardware_interface::return_type DiffBotSystemHardware::read(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & period)
 {
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  std::stringstream ss;
-  ss << "Reading states:";
-  ss << std::fixed << std::setprecision(2);
-  for (const auto & [name, descr] : joint_state_interfaces_)
-  {
-    if (descr.get_interface_name() == hardware_interface::HW_IF_POSITION)
-    {
-      // Simulate DiffBot wheels's movement as a first-order system
-      // Update the joint status: this is a revolute joint without any limit.
-      // Simply integrates
-      auto velo = get_command(descr.get_prefix_name() + "/" + hardware_interface::HW_IF_VELOCITY);
-      set_state(name, get_state(name) + period.seconds() * velo);
 
-      ss << std::endl
-         << "\t position " << get_state(name) << " and velocity " << velo << " for '" << name
-         << "'!";
-    }
-  }
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
-
+  
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type ros2_control_demo_example_2 ::DiffBotSystemHardware::write(
   const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  // BEGIN: This part here is for exemplary purposes - Please do not copy to your production code
-  std::stringstream ss;
-  ss << "Writing commands:";
-  for (const auto & [name, descr] : joint_command_interfaces_)
-  {
-    // Simulate sending commands to the hardware
-    set_state(name, get_command(name));
 
-    ss << std::fixed << std::setprecision(2) << std::endl
-       << "\t" << "command " << get_command(name) << " for '" << name << "'!";
-  }
-  RCLCPP_INFO_THROTTLE(get_logger(), *get_clock(), 500, "%s", ss.str().c_str());
-  // END: This part here is for exemplary purposes - Please do not copy to your production code
 
   return hardware_interface::return_type::OK;
 }

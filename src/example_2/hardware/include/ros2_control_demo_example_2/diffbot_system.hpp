@@ -30,7 +30,7 @@
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
 #include "rclcpp_lifecycle/state.hpp"
 #include "ros2_control_demo_example_2/wheel.hpp"
-#
+#include "ros2_control_demo_example_2/rpi_motor_control.hpp"
 
 namespace ros2_control_demo_example_2
 {
@@ -56,6 +56,9 @@ public:
 
   hardware_interface::CallbackReturn on_init(
     const hardware_interface::HardwareInfo & info) override;
+  
+  std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
+  std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
   hardware_interface::CallbackReturn on_configure(
     const rclcpp_lifecycle::State & previous_state) override;
@@ -79,7 +82,7 @@ private:
   Config cfg_;
   Wheel left_wheel;
   Wheel right_wheel;
-  
+  RpiMotorControl motor_control;
 };
 
 }  // namespace ros2_control_demo_example_2
