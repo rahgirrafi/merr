@@ -25,6 +25,7 @@ setup(
         'console_scripts': [
             'test_node = merr_robot.test_node:main',
             'camera = merr_robot.camera:main',
+            'minimal_subscriber = merr_robot.minimal_subscriber:main',
         ],
     },
 )
